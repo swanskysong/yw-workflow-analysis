@@ -132,14 +132,66 @@ public class DefaultAnalyzer {
 
             String line = "";
             while ((line = reader.readLine())!= null) {
-                output.append(line + "\n");
-                if(line.contains("adgEdge")) adgFactsLine.add(line);
+
+                if(line.contains("adgEdge")){
+                    String[] facts = line.split(" ");
+                    System.out.println("facts.length = " + facts.length);
+                    for (String fact : facts){
+                        output.append(fact + "\n");
+                        if(fact.contains("adgEdge")) adgFactsLine.add(fact);
+                    }
+                }
+                else output.append(line + "\n");
             }
+
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+
+        // adgegde to got graph
+        try {
+            File file = new File(path + "output.gv");
+            System.out.println("file.exists() = " + file.exists());
+            if (!file.exists()) file.createNewFile();
+            PrintWriter writer = new PrintWriter(file);
+            writer.println("digraph adgGraph {");
+
+
+            for (String fact : adgFactsLine) {
+                String predicate = fact.substring(0, fact.length() - 1).replace("adgEdge(", "").replace("\"", "");
+                String[] variables = predicate.split(",");
+                ArrayList<String> mergedVars = new ArrayList<>();
+                int i = 0;
+                while(i < variables.length){
+                    String curr = variables[i];
+                    if(curr.contains("c(")) {
+                        mergedVars.add(curr + "," + variables[i+1]);
+                        i++;
+                    }else mergedVars.add(curr);
+                    i++;
+                }
+                System.out.println("mergedVars = " + mergedVars.size());
+
+                String startNodeName = "\"" + mergedVars.get(0) + ":" + mergedVars.get(1) + "\"";
+                String endNodeName = "\"" + mergedVars.get(3) + ":" + mergedVars.get(4) + "\"";
+                String edgeLabel = "\"" + mergedVars.get(2) + "\"";
+                if (!edgeLabel.contains("c(")) writer.println(startNodeName + " -> " + endNodeName + " [label=" + edgeLabel + "];");
+            }
+
+            writer.println("}");
+            writer.close();
+
+            Runtime.getRuntime().exec("dot -Tpdf output.gv -o output.pdf");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+
+        // final output
         if(output.toString().contains("UNSATISFIABLE")) System.out.println("Have issues.");
         else if(output.toString().contains("SATISFIABLE")) System.out.println("dont have issues.");
         else System.out.println("sth wrong");
