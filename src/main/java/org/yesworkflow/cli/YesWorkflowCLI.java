@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.yesworkflow.analysis.DefaultAnalyzer;
 import org.yesworkflow.annotations.Annotation;
 import org.yesworkflow.config.YWConfiguration;
 import org.yesworkflow.db.YesWorkflowDB;
@@ -23,6 +24,7 @@ import org.yesworkflow.model.Modeler;
 import org.yesworkflow.recon.DefaultReconstructor;
 import org.yesworkflow.recon.Reconstructor;
 import org.yesworkflow.recon.Run;
+import org.yesworkflow.validate.DefaultValidator;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -254,6 +256,12 @@ public class YesWorkflowCLI {
                     graph();
                     return ExitCode.SUCCESS;
 
+                case ANALYSIS:
+                    extract();
+                    model();
+                    analysis();
+                    return ExitCode.SUCCESS;
+
                 case RECON:
                     extract();
                     model();
@@ -387,6 +395,7 @@ public class YesWorkflowCLI {
                            .getModel();
     }
 
+
     private void graph() throws Exception {
 
         if (grapher == null) {
@@ -396,6 +405,18 @@ public class YesWorkflowCLI {
         grapher.configure(config.getSection("graph"))
                .model(model)
                .graph();
+    }
+
+    private void analysis() throws Exception {
+        DefaultAnalyzer analyzer = new DefaultAnalyzer();
+        analyzer.model(model)
+                .analyze();
+    }
+
+    private void validate() throws Exception {
+
+        DefaultValidator validator = new DefaultValidator();
+        validator.annotation(annotations).validate();
     }
 
     private void recon() throws Exception {
